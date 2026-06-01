@@ -1,0 +1,131 @@
+Masalahnya biasanya karena AI code yang kamu pakai memisahkan fungsi **Generate JSON** dan **Render Gambar**. Padahal, kunci utamanya adalah **menyatukan alur tersebut di dalam satu tombol `🚀 Generate**`.
+
+Ayo kita luruskan strukturnya. Kamu bisa pakai panduan kode di bawah ini untuk mengoreksi file kode `Revakdezain` kamu.
+
+### 1. Di Sisi Backend / API Route (Next.js / Node.js)
+
+Pastikan kamu punya satu *endpoint* API (misalnya `/api/generate-design`) yang bertugas menerima **Topik & Ukuran**, lalu memanggil DeepSeek untuk bikin JSON, dan **langsung** melempar JSON itu ke fungsi Puppeteer kamu di tempat yang sama.
+
+Contoh struktur fungsi backend yang benar:
+
+```typescript
+// pages/api/generate-design.ts atau app/api/generate-design/route.ts
+import { OpenAI } from 'openai';
+import { renderPuppeteer } from '@/lib/renderer'; // Sesuikan dengan fungsi render punyamu
+
+const deepseek = new OpenAI({
+  baseURL: 'https://api.deepseek.com/v1',
+  apiKey: process.env.DEEPSEEK_API_KEY,
+});
+
+export async function POST(req: Request) {
+  const { topik, ukuran } = await req.json();
+
+  try {
+    // 1. Paksa DeepSeek mengeluarkan output JSON yang sesuai template kamu
+    const completion = await deepseek.chat.completions.create({
+      model: 'deepseek-chat',
+      messages: [
+        {
+          role: 'system',
+          content: `Kamu adalah desainer grafis profesional. Keluarkan output HANYA dalam bentuk JSON valid tanpa teks penjelasan apa pun di luar JSON. 
+          Struktur JSON harus seperti ini:
+          {
+            "judul": "string",
+            "subjudul": "string",
+            "poin": ["string 1", "string 2", "string 3"],
+            "cta": "string",
+            "keywordPexels": "string kata kunci gambar background bahasa inggris yang estetik dan minimalis sesuai topik"
+          }`
+        },
+        {
+          role: 'user',
+          content: `Buat konten untuk topik: "${topik}" dengan optimasi layout untuk ukuran: ${ukuran}`
+        }
+      ],
+      response_format: { type: 'json_object' } // Ini wajib biar outputnya murni JSON
+    });
+
+    const jsonString = completion.choices[0].message.content;
+    const dataDesain = JSON.parse(jsonString);
+
+    // OPTIONAL: Kalau mau pakai Pexels, kamu bisa tembak API Pexels di sini menggunakan dataDesain.keywordPexels
+    // const bgImageUrl = await fetchPexelsImage(dataDesain.keywordPexels);
+    // dataDesain.bgUrl = bgImageUrl;
+
+    // 2. LANGSUNG lempar data JSON hasil AI ini ke fungsi renderer Puppeteer kamu
+    const imageBuffer = await renderPuppeteer(dataDesain, ukuran);
+
+    // 3. Kembalikan file gambar (Buffer) langsung ke frontend
+    return new Response(imageBuffer, {
+      headers: { 'Content-Type': 'image/png' }
+    });
+
+  } catch (error) {
+    console.error(error);
+    return new Response(JSON.stringify({ error: "Gagal proses" }), { status: 500 });
+  }
+}
+
+```
+
+---
+
+### 2. Di Sisi Frontend (Tampilan UI Revakdezain Kamu)
+
+Ubah fungsi pada tombol **🚀 Generate** agar menembak API baru di atas. Alurnya: kirim teks topik -> terima gambar -> tampilkan di Preview. Fitur upload JSON biarkan saja sebagai alternatif kalau kamu lagi iseng mau input manual.
+
+```typescript
+// Di dalam komponen halaman Revakdezain kamu
+import { useState } from 'react';
+
+export default function Revakdezain() {
+  const [topik, setTopik] = useState('');
+  const [ukuran, setUkuran] = useState('1080x1080');
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleGenerateOtomatis = async () => {
+    if (!topik) return alert("Isi topiknya dulu bos!");
+    
+    setLoading(true);
+    try {
+      // Tembak backend yang menggabungkan AI + Puppeteer tadi
+      const response = await fetch('/api/generate-design', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topik, ukuran }),
+      });
+
+      if (!response.ok) throw new Error("Gagal generate");
+
+      // Karena backend langsung ngasih gambar, kita tangkap sebagai Blob
+      const imageBlob = await response.blob();
+      const imageUrl = URL.createObjectURL(imageBlob);
+      
+      // Masukkan ke state Preview!
+      setPreviewUrl(imageUrl);
+    } catch (error) {
+      console.error(error);
+      alert("Ada yang error pas render");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    // Bagian UI kamu...
+    // Pasang fungsi di atas pada tombol "🚀 Generate"
+    <button 
+      onClick={handleGenerateOtomatis}
+      disabled={loading}
+      className="bg-blue-600 text-white p-3 rounded"
+    >
+      {loading ? "Menghitung & Rendering..." : "🚀 Generate"}
+    </button>
+  );
+}
+
+```
+
+> *"Refactor kode Revakdezain saya. Ubah alur tombol **🚀 Generate** supaya ketika diklik, dia mengirim teks dari input 'Topik' dan 'Preset Ukuran' ke backend. Di backend, panggil API DeepSeek dengan format JSON Mode untuk mengisi konten, lalu hasil JSON-nya langsung dioper ke fungsi rendering Puppeteer yang sudah ada, lalu kembalikan hasilnya berupa gambar untuk langsung ditampilkan di komponen **Preview**."*

@@ -1,0 +1,22 @@
+"Cline, stop dulu rencana integrasi API luar (Pexels). Kita benahi dulu bug singkronisasi data dan UI yang sekarang terpasang. Lakukan langkah-langkah ini:
+
+Hapus Fitur Upload JSON: Cari komponen UI yang menampilkan input file atau teks 'Atau upload file JSON' di frontend, lalu hapus total dari kode. Kita hanya pakai jalur otomatis via tombol Generate.
+
+Gunakan Murni API DeepSeek (Tanpa Library OpenAI): Pastikan di backend kamu menembak API DeepSeek menggunakan fetch murni ke [https://api.deepseek.com/v1/chat/completions](https://api.deepseek.com/v1/chat/completions) dengan model deepseek-chat dan parameter response_format: { type: 'json_object' }.*
+
+Hapus Hardcoded Gambar Stroberi: Cek file template HTML/Tailwind yang dibuka oleh Puppeteer untuk di-screenshot. Cari tag <img> atau properti background-image yang berisi link gambar statis (stroberi/gambar contoh lainnya) lalu hapus total. Sebagai gantinya, ubah latar belakang template menjadi warna solid atau gradient gelap (misal: bg-slate-900) agar teksnya kontras.*
+
+Gunakan System Prompt DeepSeek di Bawah Ini: Pastikan backend mengirimkan instruksi ini ke DeepSeek agar output JSON-nya langsung pas dipasang ke template HTML.*
+
+Plaintext
+Kamu adalah seorang copywriter dan desainer layout profesional. 
+Tugasmu adalah membuat konten infografis murni teks berdasarkan topik dari user.
+
+Keluarkan HANYA dalam format JSON valid seperti ini tanpa teks penjelasan apa pun di luar JSON dan tanpa markdown (```json):
+{
+  "judul": "string judul max 6 kata",
+  "subjudul": "string satu kalimat pendek pendukung judul",
+  "poin": ["solusi/fakta singkat 1", "solusi/fakta singkat 2", "solusi/fakta singkat 3"],
+  "cta": "string ajakan seperti 'Follow @revaktor'"
+}
+Sambungkan Alur: Pastikan data judul, subjudul, poin, dan cta dari JSON DeepSeek tersebut dipetakan dengan benar ke variabel template HTML sebelum Puppeteer mengambil screenshot. Kirim gambar hasil screenshot langsung ke komponen Preview."

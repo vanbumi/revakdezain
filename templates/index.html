@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🎯 Revakdezain — Automated Ad-Graphic Engine</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    #preview img { max-width: 100%; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.15); }
+    .spinner { border: 3px solid #e5e7eb; border-top: 3px solid #6366f1; border-radius: 50%; width: 24px; height: 24px; animation: spin .8s linear infinite; display: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .big-spinner { width: 40px; height: 40px; border-width: 4px; }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-50 via-white to-purple-50 min-h-screen">
+  <div class="max-w-4xl mx-auto px-4 py-8">
+    
+    <div class="text-center mb-10">
+      <h1 class="text-5xl font-extrabold text-indigo-900 mb-2">🎯 Revakdezain</h1>
+      <p class="text-lg text-gray-500">Automated Ad-Graphic Engine — Mesin Pembuat Iklan Produk/Jasa</p>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-8">
+      
+      <!-- Form -->
+      <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-white/50">
+        <h2 class="text-xl font-bold text-gray-800 mb-6">🎯 Buat Iklan Baru</h2>
+        
+        <form id="generateForm" class="space-y-5">
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Nama Produk / Jasa</label>
+            <input type="text" name="topic" value="Jasa Desain Interior Premium"
+              class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200 outline-none transition" 
+              placeholder="Contoh: Bootcamp AI 2026, Kursus Public Speaking, Dll" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Preset Ukuran</label>
+            <select name="preset"
+              class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200 outline-none transition bg-white">
+              <option value="instagram-square">Instagram Square (1080×1080)</option>
+              <option value="instagram-story">Instagram Story (1080×1920)</option>
+              <option value="twitter-post">Twitter Post (1200×675)</option>
+            </select>
+          </div>
+
+          <button type="submit"
+            class="w-full py-3 px-6 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl hover:from-indigo-700 hover:to-purple-700 transition shadow-lg shadow-indigo-200 flex items-center justify-center gap-2">
+            <span>🚀 Generate Iklan</span>
+            <div class="spinner" id="spinner"></div>
+          </button>
+        </form>
+
+        <div id="error" class="mt-4 text-red-500 text-sm hidden"></div>
+      </div>
+
+      <!-- Preview -->
+      <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-white/50">
+        <h2 class="text-xl font-bold text-gray-800 mb-6">🖼 Preview Iklan</h2>
+        <div id="preview" class="flex flex-col items-center justify-center min-h-[300px]">
+          <div class="text-gray-400 text-center py-12">
+            <p class="text-5xl mb-4">✨</p>
+            <p>Masukkan produk/jasa dan klik Generate</p>
+            <p class="text-sm mt-1">Contoh: "Jasa Desain Interior", "Bootcamp AI 2026", "Kursus Public Speaking"</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <p class="text-center text-gray-400 text-sm mt-10">revakdezain — automated ad-graphic engine v2.0</p>
+  </div>
+
+  <script>
+    document.getElementById('generateForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = e.target.querySelector('button[type="submit"]');
+      const spinner = document.getElementById('spinner');
+      const errorDiv = document.getElementById('error');
+      const preview = document.getElementById('preview');
+
+      btn.disabled = true;
+      spinner.style.display = 'inline-block';
+      errorDiv.classList.add('hidden');
+      preview.innerHTML = '<div class="text-center py-12 text-gray-400"><div class="spinner big-spinner" style="display:inline-block"></div><p class="mt-4">Membuat iklan...</p></div>';
+
+      const formData = new FormData(e.target);
+      const topic = formData.get('topic');
+      const preset = formData.get('preset');
+
+      const body = { topic, preset };
+
+      try {
+        const res = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          preview.innerHTML = '<img src="/' + data.outputPath + '" alt="Generated Ad" />' +
+            '<div class="mt-4 text-sm text-gray-500 text-center">' +
+            '<p>' + data.dimensions.width + ' × ' + data.dimensions.height + ' · ' + (data.fileSizeBytes / 1024).toFixed(1) + ' KB</p>' +
+            '<a href="/' + data.outputPath + '" download class="inline-block mt-2 text-indigo-600 hover:text-indigo-800 font-medium underline">⬇ Download</a>' +
+            '</div>';
+        } else {
+          errorDiv.textContent = '❌ ' + data.error;
+          errorDiv.classList.remove('hidden');
+          preview.innerHTML = '<div class="text-center py-12 text-gray-400"><p class="text-5xl mb-4">💔</p><p>Generate gagal</p></div>';
+        }
+      } catch (err) {
+        errorDiv.textContent = '❌ Gagal terhubung ke server';
+        errorDiv.classList.remove('hidden');
+        preview.innerHTML = '<div class="text-center py-12 text-gray-400"><p class="text-5xl mb-4">💔</p><p>Generate gagal</p></div>';
+      }
+
+      btn.disabled = false;
+      spinner.style.display = 'none';
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+Keren banget! Berarti infrastruktur *Core Engine* (HTML/Tailwind + Puppeteer/Renderer) kamu sudah jalan dan siap pakai. Tinggal pasang "otak" AI di depannya supaya kamu gak perlu nge-ketik atau upload JSON manual lagi.
+
+Karena UI kamu sudah punya *input* **Topik** dan **Preset Ukuran**, kita tinggal manfaatkan itu sebagai pemicu (*trigger*) untuk memanggil AI Agent yang tugasnya khusus menyemburkan (generate) JSON terstruktur yang sesuai dengan skema *template* kamu.
+
+Mari kita bedah cara mengintegrasikan AI Agent-nya langsung ke tombol **🚀 Generate** milikmu.
+
+---
+
+## 1. Skema Integrasi di Balik Tombol "Generate"
+
+Ketika kamu mengetik *"Tips clean code"* di kolom Topik dan klik Generate, alur di *backend* kamu akan menjadi seperti ini:
+
+```
+[Input: Topik & Ukuran] 
+         │
+         ▼
+ ┌──────────────────────────────────────────────┐
+ │ 1. Kirim ke API Endpoint Agent (Local/Cloud) │
+ └──────────────────────────────────────────────┘
+         │
+         ▼ (Agent dipaksa return JSON sesuai skema)
+ ┌──────────────────────────────────────────────┐
+ │ 2. Inject JSON otomatis ke Template Engine   │
+ └──────────────────────────────────────────────┘
+         │
+         ▼
+ [3. Puppeteer Screenshot] ──> [Tampilkan di Preview 🖼️]
+
+## 2. Kunci Utama: Structured Output (JSON Mode)
+
+Agar AI tidak planga-plongo atau ngasih teks basa-basi seperti *"Ini adalah JSON yang kamu minta:"*, kita harus mengunci outputnya menggunakan **Structured Output / JSON Mode**.
+
+Kalau kamu pakai **Ollama (Local)** dengan model seperti `llama3` atau `gemma2`, atau pakai API eksternal, kamu bisa mengaturnya lewat *system prompt* dan parameter `response_format`.
+
+Berikut adalah contoh fungsi di Node.js/Next.js Route untuk memanggil AI-nya:
+
+```typescript
+import { createOpenAI } from '@ai-sdk/openai'; // Atau pakai SDK Ollama/DeepSeek
+import { generateObject } from 'ai';
+import { z } from 'zod';
+
+export async function POST(req: Request) {
+  const { topik, ukuran } = await req.json();
+
+  // 1. Definisikan skema JSON yang dibutuhkan oleh Template UI kamu menggunakan Zod
+  const skemaDesain = z.object({
+    judulUtama: z.string().describe("Judul yang eye-catching, maksimal 5-7 kata"),
+    subJudul: z.string().describe("Penjelasan singkat atau hook tambahan"),
+    poinPoin: z.array(z.string()).max(3).describe("Maksimal 3 poin singkat, padat, dan jelas"),
+    cta: z.string().describe("Call to action, misal: 'Save post ini' atau 'Follow @revaktor'"),
+    temaWarna: z.object({
+      bgGradientFrom: z.string().describe("Hex color untuk awal gradient bg yang estetik, kontras dengan teks putih/terang"),
+      bgGradientTo: z.string().describe("Hex color untuk akhir gradient bg"),
+      aksen: z.string().describe("Hex color untuk teks penekanan atau border")
+    })
+  });
+
+  // 2. Panggil AI Agent untuk memikirkan kontennya
+  const { object: jsonDesain } = await generateObject({
+    model: yourModelInstance, // Bisa Ollama lokal atau API pilihanmu
+    schema: skemaDesain,
+    prompt: `Buatlah konten desain grafis yang minimalis dan profesional untuk topik: "${topik}". 
+             Sesuaikan gaya bahasa dan panjang teks agar estetik untuk ukuran layout: ${ukuran}.`,
+  });
+
+  // 3. Kembalikan JSON bersih ke fungsi Renderer (Puppeteer) kamu
+  return Response.json(jsonDesain);
+}
+
+## 3. Menghubungkan ke UI `Revakdezain` Kamu
+
+Di komponen Front-end kamu (Next.js/React), fungsi pada tombol **🚀 Generate** tinggal diubah alurnya:
+
+```typescript
+const handleGenerate = async () => {
+  setLoading(true);
+  try {
+    // 1. Minta AI bikinin JSON-nya dulu berdasarkan input teks kamu
+    const responseAi = await fetch('/api/generate-konten', {
+      method: 'POST',
+      body: JSON.stringify({ topik: inputTopik, ukuran: selectUkuran }),
+    });
+    const jsonDariAi = await responseAi.json();
+
+    // 2. Langsung lempar hasil JSON dari AI tadi ke fungsi render Puppeteer yang udah kamu buat
+    const responseRender = await fetch('/api/render-image', {
+      method: 'POST',
+      body: JSON.stringify(jsonDariAi),
+    });
+    
+    // 3. Tampilkan hasilnya di Preview!
+    const blob = await responseRender.blob();
+    setPreviewUrl(URL.createObjectURL(blob));
+  } catch (error) {
+    console.error("Gagal generate:", error);
+  } finally {
+    setLoading(false);
+  }
+};
+
+```
+
+---
+
+### Efek Instan yang Bakal Kamu Rasain:
+
+Begitu ini tersambung, kamu tinggal ketik: **"3 tips optimasi query supabase"** -> Pilih **Instagram Square** -> Klik **Generate**.
+
+AI akan langsung menentukan judulnya, poin-poinnya, milih warna tema *dark mode* / *light mode* yang cocok secara otomatis, mengisinya ke komponen Tailwind kamu, dan *boom!* Gambarnya langsung muncul di bagian **Preview** tanpa kamu harus bikin file JSON manual lagi.
+
+Untuk model AI-nya, rencana kamu mau pakai model lokal yang jalan di mesinmu sendiri (via Ollama/vLLM) atau pakai API *cloud* yang murah meriah?

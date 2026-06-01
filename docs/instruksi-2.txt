@@ -1,0 +1,74 @@
+Kita akan paksa DeepSeek untuk mengeluarkan output JSON yang mengakomodasi struktur iklan komersial (anatomi copywriting iklan) lengkap dengan instruksi palet warna dekoratif agar hasilnya tidak monoton.
+Berikan perintah dan *prompt* ini langsung ke **Cline**:
+
+Perintah untuk Cline:
+> *"Cline, sekarang kita ubah fokus utama Revakdezain menjadi **Automated Ad-Graphic Engine** (Mesin Pembuat Iklan Produk/Jasa). Kita ingin outputnya memiliki standar estetika desainer manusia: kontras tinggi, teks tajam, dan memiliki elemen grafis yang kaya.*
+
+> *Tolong refactor backend API untuk DeepSeek ([https://api.deepseek.com/v1/chat/completions](https://api.deepseek.com/v1/chat/completions)) menggunakan **fetch murni** dengan model deepseek-chat dan json_object. Pasang System Prompt di bawah ini secara utuh:"*
+> 
+Kamu adalah seorang Senior Art Director dan Conversion Copywriter spesialis Iklan Digital (FB Ads, IG Ads, TikTok Ads).
+
+Tugasmu adalah mengubah input topik/produk dari user menjadi struktur konten iklan komersial yang persuasif, menjual, dan memiliki panduan visual yang mewah khas desainer profesional.
+
+Aturan Copywriting Iklan:
+1. THE HOOK (Headline): Kalimat utama di bagian atas yang bombastis, memicu emosi, atau menyelesaikan masalah utama audiens (Maksimal 6 kata).
+2. THE OFFER (Penawaran/Core Benefit): Penjelasan produk/jasa yang padat, keuntungan terbesar apa yang didapatkan konsumen, atau info diskon/harga coret jika relevan.
+3. INCENTIVES/URGENCY: Trigger psikologi seperti "Slot Terbatas", "Garansi 100% Aman", "Promo Khusus Minggu Ini", atau "Free Konsultasi".
+4. CALL TO ACTION (CTA): Instruksi jelas untuk membeli/menghubungi, misal: "Klik Link di Bawah", "Amankan Slotmu Sekarang", atau "Hubungi via WhatsApp".
+
+Aturan Estetika & Visual (Sentuhan Desainer Manusia):
+1. PALET WARNA GRADASI (Mesh Gradient): Tentukan kombinasi warna background yang sesuai dengan psikologi produk (misal: produk teknologi = biru gelap & ungu elektrik; produk promo/diskon = merah marun & oranye gelap; produk premium = hitam arang & aksen emas). Berikan warna Hex yang kontras dengan teks putih/terang.
+2. AKSEN TEKS: Pilih satu warna Hex cerah (misal: kuning neon, hijau mint, cyan) khusus untuk memberi penekanan pada kata kunci penting di bagian Headline atau Diskon agar mata audiens langsung tertuju ke sana.
+3. KEYWORD BACKGROUND (Pexels): Pilih 1-2 kata kunci bahasa Inggris spesifik untuk latar belakang yang estetik dan moody, relevan dengan kategori industri produk. JANGAN gunakan keyword membosankan seperti "office" atau "laptop". Gunakan kata kunci yang memberikan atmosfer komersial, contoh: "cyberpunk grid texture", "modern abstract architecture shadow", "luxury minimalist texture", "dark industrial background".
+
+Keluarkan HANYA dalam format JSON valid tanpa kata pembuka/penutup dan tanpa markdown (```json):
+{
+  "headline": "string",
+  "kataKunciAksen": "satu atau dua kata dari headline yang ingin diberi warna aksen cerah",
+  "offer": "string penawaran utama",
+  "urgency": "string insentif/urgency",
+  "cta": "string kalimat cta",
+  "visual": {
+    "gradientFrom": "Hex warna latar 1",
+    "gradientTo": "Hex warna latar 2",
+    "warnaAksenTeks": "Hex warna cerah untuk highlight",
+    "keywordPexels": "string kata kunci pencarian gambar latar belakang di pexels"
+  }
+}
+
+```
+> *"Setelah backend berhasil menerima JSON tersebut, teruskan seluruh data ke fungsi renderPuppeteer agar variabel headline, offer, urgency, cta, dan properti visual bisa langsung disuntikkan ke dalam template HTML/Tailwind."*
+> 
+### Catatan Penting buat Kamu (Untuk Template HTML di Renderer):
+Agar Cline bisa mengeksekusi ini dengan hasil yang tampak "mahal", pastikan template HTML yang dibaca Puppeteer memiliki struktur CSS berlapis (*layering*) seperti ini:
+
+ 1. **Gunakan Font Bagus:** Panggil font komersial/modern di tag <head> template HTML, misal:
+   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&display=swap" rel="stylesheet">
+
+ 2. **Buat Background Berlapis (Mesh Gradient + Efek Gambar):**
+   Di dalam komponen background Tailwind-mu, gabungkan warna gradasi dari DeepSeek dengan efek gambar (setelah Pexels aktif nanti), contoh struktur dasarnya:
+
+   ```html
+   
+   ```
+<div
+style="background: linear-gradient(135deg, ${data.visual.gradientFrom}, ${data.visual.gradientTo});"
+class="relative w-full h-full text-white font-['Plus_Jakarta_Sans'] p-16 flex flex-col justify-between overflow-hidden"
+> 
+<!-- Efek Ornamen Watermark Grid Grafis bawaan template (Manusia Banget) -->
+<div class="absolute inset-0 opacity-10 bg-[linear-gradient(to_right,#808080_1px,transparent_1px),linear-gradient(to_bottom,#808080_1px,transparent_1px)] bg-[size:40px_40px]"></div>
+<!-- Lingkaran Cahaya Blur (Glow Effect) di pojok untuk estetika -->
+<div style="background: ${data.visual.warnaAksenTeks};" class="absolute -top-20 -left-20 w-80 h-80 rounded-full blur-[150px] opacity-30"></div>
+<!-- KONTEN IKLAN (Headline, Offer, CTA) tinggal disusun rapi menggunakan flexbox -->
+</div>
+```
+
+Biarkan Cline merapikan struktur komunikasi datanya dulu sampai beres bray. Begitu selesai, kamu coba ketik produk asli/jasa apa saja, lalu lihat apakah kombinasi kalimat iklan dan warna gradasinya sudah mulai memuaskan seleramu!
+
+```
+### Perintah Tambahan untuk Cline (Kunci Grafis Estetik):
+> "Cline, saat kamu menyusun template HTML/Tailwind di dalam fungsi renderPuppeteer, kamu **wajib* menambahkan sentuhan desain grafis profesional (Aesthetics Multi-Layering) agar latar belakangnya tidak polos. Terapkan elemen berikut langsung di dalam kode HTML-nya:"*
+>  1. *Watermark Corak Grafis (Grid/Dot Pattern):* Tambahkan lapisan background pattern berupa garis-garis grid halus ala desainer modern di atas warna gradasi. Kamu bisa pakai utility Tailwind atau CSS inline berikut di dalam salah satu div layer latar belakang:
+>    bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:32px_32px]
+>  2. *Efek Cahaya Pudar (Glow Orb Effect):* Tambahkan minimal satu elemen lingkaran dekoratif abstrak yang nge-blur di sudut layout menggunakan warna dari visual.warnaAksenTeks dengan opasitas rendah (misal opacity-20 blur-[120px]) untuk memberikan efek pencahayaan (lighting) yang mewah.
+>  3. *Tipografi Kontras Tinggi:* Pastikan font utama menggunakan font modern (seperti Plus Jakarta Sans atau Inter via Google Fonts). Gunakan teknik parsing teks pada headline: jika ada kata yang cocok dengan kataKunciAksen, bungkus kata tersebut dengan tag <span> yang warnanya menggunakan visual.warnaAksenTeks agar menyala dan menjadi pusat perhatian.
